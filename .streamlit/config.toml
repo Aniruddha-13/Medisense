@@ -1,0 +1,12 @@
+[client]
+# This is the reliable, version-proof way to hide the "Deploy" button and
+# hamburger menu — CSS selectors for it change between Streamlit releases,
+# this setting doesn't.
+toolbarMode = "minimal"
+
+[theme]
+primaryColor = "#2FBF96"
+backgroundColor = "#EAFBF5"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#16211D"
+font = "sans serif"

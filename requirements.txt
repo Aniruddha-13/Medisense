@@ -1,0 +1,17 @@
+# Core Data & ML
+pandas>=2.2.0
+numpy>=1.26.0
+scikit-learn>=1.4.0
+
+# NLP & Entity Extraction
+regex>=2023.12.25
+rapidfuzz>=3.6.0
+sentence-transformers>=2.5.0
+spacy>=3.7.0
+
+# Database / Vector Storage
+psycopg2-binary>=2.9.9
+pgvector>=0.2.5
+
+# Web Application & Deployment
+streamlit>=1.32.0
