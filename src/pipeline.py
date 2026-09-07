@@ -1,5 +1,6 @@
 import os
 import sys
+import joblib
 import pickle
 import numpy as np
 import pandas as pd
@@ -29,63 +30,65 @@ class MediSensePipeline:
         self.nlp = SecureSemanticExtractor(models_dir=models_dir)
         self.triage = ClinicalTriageEngine()
 
-        with open(os.path.join(models_dir, "medical_model.pkl"), "rb") as f:
-            self.model = pickle.load(f)
-        with open(os.path.join(models_dir, "label_encoder.pkl"), "rb") as f:
-            self.label_encoder = pickle.load(f)
-        with open(os.path.join(models_dir, "symptom_features.pkl"), "rb") as f:
-            self.symptom_list = pickle.load(f)
+        # Load compressed model via joblib
+        model_path = os.path.join(models_dir, "medical_model.pkl")
+        self.model = joblib.load(model_path)
+
+        # joblib.load can safely unpack standard pickle artifacts as well
+        self.label_encoder = joblib.load(os.path.join(models_dir, "label_encoder.pkl"))
+        self.symptom_list = joblib.load(os.path.join(models_dir, "symptom_features.pkl"))
 
     def analyze(self, raw_text, patient_profile=None, top_k=3, similarity_threshold=0.70):
         try:
+            if not raw_text or not str(raw_text).strip():
+                return {
+                    "status": "error",
+                    "message": "No recognized symptoms matching clinical vocabulary were identified.",
+                    "active_symptoms": [],
+                    "negated_symptoms": []
+                }
+
             # 1. Semantic extraction with calibrated similarity threshold
             extraction = self.nlp.extract_symptoms(raw_text, similarity_threshold=similarity_threshold)
             active_symptoms = extraction["present"]
             negated_symptoms = extraction["negated"]
 
-            if not active_symptoms:
-                return {
-                    "status": "error",
-                    "message": "No recognized symptoms matching clinical vocabulary were identified.",
-                    "active_symptoms": [],
-                    "negated_symptoms": negated_symptoms
-                }
-
-            # 2. Vectorize
-            vector = pd.DataFrame(0, index=[0], columns=self.symptom_list)
-            for sym in active_symptoms:
-                if sym in vector.columns:
-                    vector.loc[0, sym] = 1
-
-            # 3. Model prediction
-            probas = self.model.predict_proba(vector)[0]
-            sorted_indices = np.argsort(probas)[::-1]
-
-            # 4. Demographic & Biological Guardrails
-            profile = patient_profile or {}
-            is_female = str(profile.get("sex", "")).strip().lower() == "female"
-            is_pregnant = bool(profile.get("is_pregnant", False))
-
             differential = []
-            for idx in sorted_indices:
-                disease_name = self.label_encoder.inverse_transform([idx])[0]
-                d_lower = disease_name.lower()
+            if active_symptoms:
+                # 2. Vectorize
+                vector = pd.DataFrame(0, index=[0], columns=self.symptom_list)
+                for sym in active_symptoms:
+                    if sym in vector.columns:
+                        vector.loc[0, sym] = 1
 
-                # Guardrail: Suppress female/obstetric conditions for non-females
-                if not is_female and d_lower in FEMALE_OBSTETRIC_CONDITIONS:
-                    continue
+                # 3. Model prediction
+                probas = self.model.predict_proba(vector)[0]
+                sorted_indices = np.argsort(probas)[::-1]
 
-                # Guardrail: Suppress pregnancy conditions for non-pregnant profiles
-                if not is_pregnant and ("pregnancy" in d_lower or d_lower == "hyperemesis gravidarum"):
-                    continue
+                # 4. Demographic & Biological Guardrails
+                profile = patient_profile or {}
+                is_female = str(profile.get("sex", "")).strip().lower() == "female"
+                is_pregnant = bool(profile.get("is_pregnant", False))
 
-                conf = round(float(probas[idx] * 100), 2)
-                differential.append({
-                    "disease": disease_name.title(),
-                    "confidence": conf
-                })
-                if len(differential) >= top_k:
-                    break
+                for idx in sorted_indices:
+                    disease_name = self.label_encoder.inverse_transform([idx])[0]
+                    d_lower = disease_name.lower()
+
+                    # Guardrail: Suppress female/obstetric conditions for non-females
+                    if not is_female and d_lower in FEMALE_OBSTETRIC_CONDITIONS:
+                        continue
+
+                    # Guardrail: Suppress pregnancy conditions for non-pregnant profiles
+                    if not is_pregnant and ("pregnancy" in d_lower or d_lower == "hyperemesis gravidarum"):
+                        continue
+
+                    conf = round(float(probas[idx] * 100), 2)
+                    differential.append({
+                        "disease": disease_name.title(),
+                        "confidence": conf
+                    })
+                    if len(differential) >= top_k:
+                        break
 
             # 5. Clinical Triage
             top_disease = differential[0]["disease"] if differential else "Undetermined"

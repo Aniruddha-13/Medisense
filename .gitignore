@@ -1,78 +1,47 @@
-# Byte-compiled / optimized / DLL files
+# ========================================
+# Python & Environment
+# ========================================
+venv/
+env/
+.env
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyd
 
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# IDEs
-.idea/
+# ========================================
+# Operating System & IDEs
+# ========================================
 .vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
 
-# Streamlit
-# Only ignore credentials, keep config.toml if it exists
-.streamlit/secrets.toml
+# ========================================
+# Terminal Dumps & Text Output
+# ========================================
+structure*.txt
+*.log
 
-# Project specific
-data/
-models/
-experiments/
-*.csv
-*.npy
-*.pkl
+# ========================================
+# Agent Tools & Local State
+# ========================================
+.agents/
+skills-lock.json
+
+# ========================================
+# Ad-hoc Debug & Scratchpad Scripts
+# ========================================
+diag_semantics.py
+inspect_symptoms.py
+
+# ========================================
+# QA, Test Runs & Benchmark Results
+# ========================================
+benchmark_results.csv
+audit_results*.json
+
+# ========================================
+# Force Include Essential Streamlit Config
+# ========================================
+!.streamlit/config.toml

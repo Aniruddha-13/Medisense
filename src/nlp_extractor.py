@@ -61,6 +61,9 @@ SYMPTOM_ALIASES = {
     "skin rash": [
         "red rash", "itchy rash", "itchy red rash",
         "rash on skin", "rash spreading",
+        "hives", "raised welts", "raised red welts", "welts",
+        "urticaria", "red welts", "skin welts", "red bumps on skin",
+        "bumps on skin", "skin bumps", "wheals",
     ],
     "diminished hearing": [
         "decreased hearing", "hearing loss", "reduced hearing",
@@ -69,6 +72,56 @@ SYMPTOM_ALIASES = {
     "heartburn": [
         "acid reflux", "burning behind breastbone",
         "burning pain behind breastbone",
+    ],
+    # ── Neurological / Stroke (FAST criteria) ──────────────────────────────
+    "difficulty speaking": [
+        "slurred speech", "slurring speech", "slurring of speech",
+        "speech slurred", "slurred words", "can not speak clearly",
+        "trouble speaking", "trouble with speech", "dysarthria",
+        "speech difficulty", "speech problem", "garbled speech",
+        "unable to speak clearly", "hard to speak",
+    ],
+    "symptoms of the face": [
+        "facial drooping", "face drooping", "facial droop",
+        "drooping face", "drooping on the face", "facial weakness",
+        "face weakness", "one-sided facial weakness",
+        "right side face drooping", "left side face drooping",
+        "facial paralysis", "facial palsy", "half face drooping",
+        "asymmetric face", "uneven face",
+    ],
+    "arm weakness": [
+        "weakness in arm", "arm feels weak", "arms feel weak",
+        "weak arm", "weakness in right arm", "weakness in left arm",
+        "right arm weakness", "left arm weakness", "arm paralysis",
+        "cannot lift arm", "arm giving way",
+    ],
+    # ── Dermatological / Allergic / Anaphylaxis ───────────────────────────
+    "itching of skin": [
+        "itchy skin", "itchy", "skin itching", "itchiness",
+        "itchy all over", "itchy body", "intense itching",
+        "intensely itchy", "itching all over", "pruritus",
+        "skin itches", "itchy torso", "itchy arms",
+    ],
+    "allergic reaction": [
+        "allergic", "allergy", "allergic response",
+        "anaphylaxis", "anaphylactic", "allergic attack",
+        "reaction to food", "food reaction", "shellfish reaction",
+        "reaction after eating", "reaction to shellfish",
+    ],
+    "dizziness": [
+        "dizzy", "feeling dizzy", "feel dizzy", "slightly dizzy",
+        "lightheaded", "light-headed", "light headed",
+        "feeling lightheaded", "giddiness", "giddy", "vertigo",
+        "spinning sensation", "room spinning", "head spinning",
+    ],
+    # ── Gastrointestinal / Appendicitis ───────────────────────────────────
+    "decreased appetite": [
+        "loss of appetite", "lost appetite", "lost their appetite",
+        "completely lost their appetite", "no appetite",
+        "poor appetite", "reduced appetite", "not eating",
+        "not hungry", "unable to eat", "anorexia",
+        "doesn't want to eat", "does not want to eat",
+        "little to no appetite", "appetite loss",
     ],
 }
 
@@ -125,6 +178,19 @@ class SecureSemanticExtractor:
                 for alias in aliases:
                     if alias not in self.phrase_to_symptom:
                         self.phrase_to_symptom[alias] = sym
+
+        self.clinical_aliases = {
+            "dyspnea": "shortness of breath",
+            "diaphoresis": "sweating",
+            "head in a vice": "headache",
+            "head is in a vice": "headache",
+            "heart is racing": "palpitations",
+            "angina": "chest pain"
+        }
+        for alias, sym in self.clinical_aliases.items():
+            if alias not in self.phrase_to_symptom:
+                self.phrase_to_symptom[alias] = sym
+
         self.phrases_by_length = sorted(
             self.phrase_to_symptom.keys(), key=len, reverse=True
         )
@@ -285,7 +351,7 @@ class SecureSemanticExtractor:
     #  Main Extraction Pipeline
     # ──────────────────────────────────────────────────────────
 
-    def extract_symptoms(self, raw_text, similarity_threshold=0.70):
+    def extract_symptoms(self, raw_text, similarity_threshold=0.65):
         safe_text = self._sanitize_input(raw_text)
         if not safe_text:
             return {"present": [], "negated": []}
